@@ -1,0 +1,8 @@
+.git/
+.github/
+.sisyphus/
+.opencode/
+ref/
+TASK.md
+tsconfig.json
+node_modules/

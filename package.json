@@ -1,11 +1,34 @@
 {
-  "name": "@openclaw/channel-talk",
-  "version": "2026.2.10-1",
+  "name": "@openclaw-community/channel-talk",
+  "version": "0.1.0",
   "description": "OpenClaw Channel Talk (채널톡) Team Chat channel plugin",
   "type": "module",
+  "license": "MIT",
+  "author": "happycastle114",
+  "homepage": "https://github.com/happycastle114/openclaw-channel-talk#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/happycastle114/openclaw-channel-talk.git"
+  },
+  "keywords": [
+    "openclaw",
+    "channel-talk",
+    "채널톡",
+    "chatbot",
+    "team-chat",
+    "plugin"
+  ],
+  "files": [
+    "index.ts",
+    "src/",
+    "openclaw.plugin.json",
+    "README.md"
+  ],
   "dependencies": {
-    "express": "^4.19.0",
-    "openclaw": "workspace:*"
+    "express": "^4.19.0"
+  },
+  "peerDependencies": {
+    "openclaw": "*"
   },
   "openclaw": {
     "extensions": [
@@ -25,7 +48,7 @@
       "order": 110
     },
     "install": {
-      "npmSpec": "@openclaw/channel-talk",
+      "npmSpec": "@openclaw-community/channel-talk",
       "localPath": "extensions/channel-talk",
       "defaultChoice": false
     }

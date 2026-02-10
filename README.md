@@ -1,223 +1,206 @@
-# OpenClaw Channel Talk Plugin (Unofficial)
+# @openclaw-community/channel-talk
 
-> ⚠️ **Unofficial Plugin** — This is a community-built, unofficial Channel Talk plugin for [OpenClaw](https://github.com/openclaw/openclaw). It is not affiliated with, endorsed by, or supported by [Channel Corp](https://channel.io) or the OpenClaw team.
+> ⚠️ **Unofficial** — 이 플러그인은 Channel Corp 또는 OpenClaw 팀과 관련이 없는 커뮤니티 프로젝트입니다.
 
-Channel Talk (채널톡) Team Chat channel plugin for OpenClaw. Enables your OpenClaw AI agent to receive and respond to messages in Channel Talk Team Chat groups.
+[Channel Talk (채널톡)](https://channel.io) Team Chat을 OpenClaw에 연동하는 채널 플러그인입니다.
 
-## Features
+## ✨ Features
 
-- 📥 **Webhook-based inbound** — Receives team chat messages via Channel Talk webhook events
-- 📤 **REST API outbound** — Sends replies through Channel Talk Open API v5
-- 🔄 **Duplicate detection** — In-memory message ID cache (60s TTL) prevents duplicate processing
-- 🔁 **Automatic retry** — Retries on 429/5xx errors with exponential backoff (1s, 3s)
-- 🤖 **Bot filtering** — Automatically ignores bot-originated messages to prevent loops
-- 🏷️ **Bot identity** — Sends replies as bot with configurable display name (`botName`)
+- 📨 **Team Chat 메시지 수신** — 웹훅을 통해 채널톡 팀챗 메시지를 실시간으로 수신
+- 💬 **메시지 발송** — OpenClaw 에이전트가 채널톡 팀챗에 직접 응답
+- 🤖 **커스텀 봇 이름** — `botName` 설정으로 봇 표시 이름 변경 가능
+- 🔄 **자동 재시도** — API 오류(429, 5xx) 시 지수 백오프 재시도
+- 📝 **Markdown 청킹** — 긴 메시지를 자동으로 분할하여 전송
+- 🔒 **중복 메시지 필터링** — 동일 메시지 중복 처리 방지
 
-## Scope
+## 📋 Prerequisites
 
-This plugin supports **Team Chat only** (internal group messaging between managers/staff). User Chat (customer-facing) is not currently supported.
+- [OpenClaw](https://github.com/nicepkg/openclaw)가 설치되어 실행 중이어야 합니다
+- Channel Talk 계정 및 API 키 (Access Key + Access Secret)
+- 웹훅 수신을 위한 공개 URL (Tailscale Funnel, ngrok, 리버스 프록시 등)
 
-## Prerequisites
+## 🚀 설치 및 설정 가이드
 
-- [OpenClaw](https://github.com/openclaw/openclaw) installed and running
-- A Channel Talk account with API credentials
-- A publicly accessible URL for webhook delivery (e.g., via [Tailscale Funnel](https://tailscale.com/kb/1223/funnel), [ngrok](https://ngrok.com), or a reverse proxy)
+### 1단계: Channel Talk API 키 발급
 
-## Setup
+1. [채널 데스크](https://desk.channel.io)에 로그인
+2. **설정** → **보안 및 개발** → **API Key 관리**로 이동
+3. **새 API Key 생성** 클릭
+4. **Access Key**와 **Access Secret**을 안전하게 복사해 둡니다
 
-### 1. Create Channel Talk API Credentials
+### 2단계: 플러그인 설치
 
-1. Log in to [Channel Desk](https://desk.channel.io)
-2. Go to **Settings** → **API Key Management** → **Create new credential**
-3. Note down the **Access Key** and **Access Secret**
-
-For more details, see the [Channel Talk authentication docs](https://developers.channel.io/docs/authentication-2).
-
-### 2. Install the Plugin
-
-**From local checkout:**
+**npm을 통한 설치 (권장):**
 
 ```bash
-openclaw plugins install /path/to/openclaw-channel-talk
+openclaw plugins install @openclaw-community/channel-talk
 ```
 
-**Or copy to extensions directory:**
+**로컬 설치 (개발용):**
 
 ```bash
-cp -r openclaw-channel-talk ~/.openclaw/extensions/channel-talk
-cd ~/.openclaw/extensions/channel-talk && npm install
+git clone https://github.com/happycastle114/openclaw-channel-talk.git
+cd openclaw-channel-talk
+npm install
+# OpenClaw 설정에서 로컬 경로를 지정합니다
 ```
 
-### 3. Configure OpenClaw
+### 3단계: OpenClaw 설정
 
-Add the channel configuration to your OpenClaw config (`~/.openclaw/openclaw.json`):
+OpenClaw 설정 파일(`config.yaml` 또는 `config.json`)에 다음을 추가합니다:
 
-```jsonc
-{
-  "channels": {
-    "channel-talk": {
-      "enabled": true,
-      "accessKey": "<YOUR_ACCESS_KEY>",
-      "accessSecret": "<YOUR_ACCESS_SECRET>",
-      "botName": "OpenClaw",          // optional: display name for sent messages
-      "groupPolicy": "open",          // "open" = all groups, "closed" = none
-      "webhook": {
-        "port": 3979,                 // optional, default: 3979
-        "path": "/api/channel-talk"   // optional, default: /api/channel-talk
-      }
-    }
-  }
-}
+```yaml
+channels:
+  channel-talk:
+    # Channel Talk API 인증 정보 (필수)
+    accessKey: "your-access-key"
+    accessSecret: "your-access-secret"
+
+    # 봇 표시 이름 (선택, 기본값: API 기본 봇 이름)
+    botName: "MyBot"
+
+    # 팀챗 그룹 정책 (선택, 기본값: "open")
+    # "open" = 모든 팀챗 메시지 처리
+    # "closed" = 팀챗 메시지 처리 안 함
+    groupPolicy: "open"
+
+    # 웹훅 서버 설정 (선택)
+    webhook:
+      port: 3979              # 기본값: 3979
+      path: "/api/channel-talk"  # 기본값: /api/channel-talk
 ```
 
-You can also use environment variables:
+### 4단계: 웹훅 엔드포인트 공개
 
-| Variable | Description |
-|----------|-------------|
-| `CHANNEL_TALK_ACCESS_KEY` | Channel Talk access key |
-| `CHANNEL_TALK_ACCESS_SECRET` | Channel Talk access secret |
+채널톡이 웹훅 이벤트를 보내려면 공개 URL이 필요합니다. 아래 방법 중 하나를 선택하세요:
 
-### 4. Expose the Webhook Endpoint
+**Tailscale Funnel (권장):**
 
-Channel Talk needs to reach your webhook endpoint. Choose one:
-
-**Option A: Tailscale Funnel (recommended for self-hosted)**
 ```bash
 tailscale funnel 3979
-# Your URL: https://your-machine.tail1234.ts.net
+# https://your-machine.tail12345.ts.net 형태의 URL이 생성됩니다
 ```
 
-**Option B: ngrok**
+**ngrok:**
+
 ```bash
 ngrok http 3979
-# Copy the https URL, e.g., https://abc123.ngrok.io
+# https://xxxx-xxxx.ngrok-free.app 형태의 URL이 생성됩니다
 ```
 
-**Option C: Reverse proxy (production)**
-Configure your web server (nginx, Caddy, etc.) to proxy to `localhost:3979`.
+**리버스 프록시 (Nginx, Caddy 등):**
 
-### 5. Register the Webhook in Channel Talk
+기존 도메인이 있다면 리버스 프록시로 `localhost:3979`를 포워딩합니다.
 
-Register a webhook in Channel Talk to forward team chat messages to your endpoint.
+### 5단계: Channel Talk 웹훅 등록
 
-**Via Channel Talk API:**
+채널톡 API를 사용하여 웹훅을 등록합니다:
+
 ```bash
-curl -X POST https://api.channel.io/open/v5/webhooks \
-  -H "x-access-key: <YOUR_ACCESS_KEY>" \
-  -H "x-access-secret: <YOUR_ACCESS_SECRET>" \
+curl -X PUT "https://api.channel.io/open/v5/native/functions" \
+  -H "x-access-key: YOUR_ACCESS_KEY" \
+  -H "x-access-secret: YOUR_ACCESS_SECRET" \
   -H "Content-Type: application/json" \
   -d '{
-    "name": "OpenClaw",
-    "url": "https://<YOUR_PUBLIC_URL>/api/channel-talk",
-    "scopes": ["message.created.teamChat"],
-    "apiVersion": "v5"
+    "body": {
+      "nativeFunctions": [{
+        "name": "openclaw-webhook",
+        "uri": "https://YOUR_PUBLIC_URL/api/channel-talk",
+        "method": "POST",
+        "headers": {}
+      }]
+    }
   }'
 ```
 
-**Note:** The webhook creation response includes a `token` field that can be used for request verification (not yet implemented in this plugin).
+> 💡 `YOUR_PUBLIC_URL`을 4단계에서 얻은 공개 URL로 교체하세요.
 
-### 6. Start OpenClaw
+### 6단계: 게이트웨이 시작
 
 ```bash
 openclaw gateway start
-# or
-openclaw gateway restart
 ```
 
-The plugin will automatically start the webhook server on the configured port.
+이제 채널톡 Team Chat에서 메시지를 보내면 OpenClaw 에이전트가 응답합니다! 🎉
 
-## Configuration Reference
+## ⚙️ Configuration Reference
 
-| Key | Type | Default | Description |
-|-----|------|---------|-------------|
-| `enabled` | boolean | `true` | Enable/disable the plugin |
-| `accessKey` | string | *required* | Channel Talk API access key |
-| `accessSecret` | string | *required* | Channel Talk API access secret |
-| `botName` | string | — | Display name for bot messages |
-| `groupPolicy` | `"open"` \| `"closed"` | `"open"` | Whether to accept messages from all groups |
-| `webhook.port` | number | `3979` | HTTP server port for webhook |
-| `webhook.path` | string | `"/api/channel-talk"` | URL path for webhook endpoint |
+| 키 | 타입 | 필수 | 기본값 | 설명 |
+|---|---|---|---|---|
+| `accessKey` | `string` | ✅ | — | Channel Talk API Access Key |
+| `accessSecret` | `string` | ✅ | — | Channel Talk API Access Secret |
+| `enabled` | `boolean` | ❌ | `true` | 플러그인 활성화/비활성화 |
+| `botName` | `string` | ❌ | — | 봇 메시지 표시 이름 |
+| `groupPolicy` | `"open" \| "closed"` | ❌ | `"open"` | 팀챗 그룹 메시지 처리 정책 |
+| `webhook.port` | `number` | ❌ | `3979` | 웹훅 서버 포트 |
+| `webhook.path` | `string` | ❌ | `"/api/channel-talk"` | 웹훅 엔드포인트 경로 |
 
-## Architecture
-
-```
-Channel Talk                    OpenClaw
-┌──────────────┐     webhook    ┌─────────────────────┐
-│  Team Chat   │ ──────────→   │  Webhook Handler     │
-│  (Group)     │   POST event  │  (webhook.ts)        │
-│              │               │    ↓                  │
-│              │               │  Dedup + Filter       │
-│              │               │    ↓                  │
-│              │               │  OpenClaw Agent       │
-│              │   REST API    │    ↓                  │
-│  ← reply ── │ ←──────────── │  API Client           │
-│              │   POST msg    │  (api-client.ts)      │
-└──────────────┘               └─────────────────────┘
-```
-
-### Webhook Events
-
-The plugin listens for `message.created.teamChat` events and filters:
-- ✅ Team chat (`chatType=group`) messages with text content
-- ❌ Bot messages (prevents reply loops)
-- ❌ Empty messages
-- ❌ Non-group messages
-- ❌ Duplicate messages (60s window)
-
-### Outbound Messages
-
-Replies are sent via `POST /open/v5/groups/{groupId}/messages` with:
-- `plainText` — Message content (auto-chunked for long messages)
-- `botName` query parameter — Sets the bot display name
-
-> **Note:** `actAsManager` option is **not available** for Team Chat. Messages are sent as bot type.
-
-## File Structure
+## 🏗️ Architecture
 
 ```
-openclaw-channel-talk/
-├── openclaw.plugin.json     # Plugin manifest
-├── package.json             # Dependencies & metadata
-├── tsconfig.json            # TypeScript config
-├── index.ts                 # Entry point (registers channel plugin)
-├── src/
-│   ├── channel.ts           # ChannelPlugin interface implementation
-│   ├── config-schema.ts     # Config validation schema (TypeBox)
-│   ├── webhook.ts           # Webhook HTTP server & event handler
-│   ├── api-client.ts        # Channel Talk REST API client (v5)
-│   ├── send.ts              # Outbound message helper
-│   ├── runtime.ts           # OpenClaw runtime accessor
-│   └── types.ts             # TypeScript type definitions
-└── ref/
-    └── channel-swagger.json # Channel Talk API reference (for dev)
+┌─────────────────┐     webhook POST      ┌──────────────────┐
+│  Channel Talk   │ ───────────────────▶   │  OpenClaw        │
+│  (Team Chat)    │                        │  Gateway         │
+│                 │     API response       │                  │
+│                 │ ◀───────────────────   │  ┌────────────┐  │
+│                 │                        │  │ channel-    │  │
+│                 │                        │  │ talk plugin │  │
+└─────────────────┘                        │  └────────────┘  │
+                                           │       │          │
+                                           │       ▼          │
+                                           │  ┌────────────┐  │
+                                           │  │   Agent     │  │
+                                           │  │  (LLM)     │  │
+                                           │  └────────────┘  │
+                                           └──────────────────┘
+
+1. 채널톡 Team Chat에 메시지 작성
+2. 웹훅이 POST /api/channel-talk 으로 이벤트 전달
+3. 플러그인이 메시지를 파싱하여 에이전트에 전달
+4. 에이전트가 응답 생성
+5. Channel Talk API로 팀챗에 응답 전송
 ```
 
-## Troubleshooting
+## 🔍 Verified API Behavior
 
-### Webhook not receiving events
-- Verify your public URL is accessible: `curl https://<YOUR_URL>/api/channel-talk`
-- Check that the webhook is registered: `curl -H "x-access-key: ..." -H "x-access-secret: ..." https://api.channel.io/open/v5/webhooks`
-- Ensure the webhook scope includes `message.created.teamChat`
+개발 과정에서 확인된 Channel Talk API 동작 특이사항:
 
-### Bot not responding
-- Check OpenClaw gateway logs for `[channel-talk]` prefixed messages
-- Verify API credentials are correct (test with a direct API call)
-- Ensure `groupPolicy` is set to `"open"` (or configure allowlists)
+- **웹훅 이벤트 형식**: 이벤트는 `event: "push"`로 수신됩니다. 상위 레벨에 `type` 필드가 없을 수 있습니다.
+- **Group ID 위치**: `groupId`는 `entity.chatId`에서 가져옵니다. `refers.group.id`에는 없을 수 있습니다.
+- **`actAsManager` 옵션**: Team Chat에서 사용 시 `422` 에러가 발생합니다. 이 옵션은 User Chat 전용입니다.
+- **`botName` 파라미터**: 쿼리 파라미터로 전달하면 커스텀 봇 이름이 정상 작동합니다.
+- **메시지 발신자 타입**: 봇이 보낸 메시지는 `personType: "bot"`으로 표시됩니다.
 
-### Duplicate messages
-- The plugin uses a 60-second dedup window. If Channel Talk retries rapidly, duplicates are dropped.
-- Check logs for `skipping duplicate message` entries.
+## 🛠️ Troubleshooting
 
-## Channel Talk API Reference
+### 웹훅이 수신되지 않는 경우
 
-- [Authentication](https://developers.channel.io/docs/authentication-2)
-- [Open API Documentation](https://api-doc.channel.io)
-- [Webhook Reference](https://developers.channel.io/docs)
+1. 공개 URL이 올바르게 설정되었는지 확인합니다
+2. 게이트웨이가 실행 중인지 확인합니다: `openclaw gateway status`
+3. 포트가 방화벽에 의해 차단되지 않았는지 확인합니다
+4. 웹훅 등록 curl 명령을 다시 실행합니다
 
-## License
+### 인증 오류 (401/403)
+
+- `accessKey`와 `accessSecret`이 올바른지 확인합니다
+- API Key가 비활성화되지 않았는지 채널 데스크에서 확인합니다
+
+### 메시지 전송 실패 (422)
+
+- `actAsManager` 옵션을 사용하지 마세요 — Team Chat에서는 지원되지 않습니다
+- `groupId`가 유효한 팀챗 그룹 ID인지 확인합니다
+
+### 봇이 자기 메시지에 반응하는 경우
+
+- 플러그인은 `personType: "bot"` 메시지를 자동으로 무시합니다
+- 이 문제가 발생하면 로그를 확인해 주세요
+
+## 📄 License
 
 MIT
 
----
+## ⚠️ Disclaimer
 
-*Built by the community for [OpenClaw](https://github.com/openclaw/openclaw). Not officially supported by Channel Corp or the OpenClaw team.*
+이 프로젝트는 **비공식 커뮤니티 프로젝트**입니다.
+[Channel Corp](https://channel.io) 또는 [OpenClaw](https://github.com/nicepkg/openclaw) 팀과 어떠한 제휴 관계도 없습니다.
+Channel Talk은 Channel Corp의 상표입니다.

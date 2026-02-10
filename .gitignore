@@ -1,1 +1,5 @@
-node_modules/\ndist/\n.opencode/
+node_modules/
+dist/
+.opencode/
+.sisyphus/
+ref/
