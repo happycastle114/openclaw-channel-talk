@@ -1,0 +1,13 @@
+{
+  "active_plan": "/home/happycastle/Projects/openclaw-channel-talk/.sisyphus/plans/channel-talk-plugin.md",
+  "started_at": "2026-02-10T11:57:45.993Z",
+  "session_ids": [
+    "ses_3b8aa189effeBjmSPDjaVQb32t"
+  ],
+  "plan_name": "channel-talk-plugin",
+  "agent": "atlas",
+  "status": "completed",
+  "completed_at": "2026-02-10T12:37:23.000Z",
+  "tasks_completed": 24,
+  "tasks_total": 24
+}
