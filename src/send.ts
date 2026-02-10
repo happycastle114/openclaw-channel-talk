@@ -30,7 +30,6 @@ export const channelTalkOutbound: ChannelOutboundAdapter = {
     const result = await sendMessage(credentials, {
       groupId: to,
       plainText: text,
-      options: ['actAsManager'],
       botName: channelCfg.botName,
     });
 

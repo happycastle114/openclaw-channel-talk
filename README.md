@@ -11,7 +11,7 @@ Channel Talk (채널톡) Team Chat channel plugin for OpenClaw. Enables your Ope
 - 🔄 **Duplicate detection** — In-memory message ID cache (60s TTL) prevents duplicate processing
 - 🔁 **Automatic retry** — Retries on 429/5xx errors with exponential backoff (1s, 3s)
 - 🤖 **Bot filtering** — Automatically ignores bot-originated messages to prevent loops
-- 🏷️ **Manager identity** — Shows replies as manager (`actAsManager` option)
+- 🏷️ **Bot identity** — Sends replies as bot with configurable display name (`botName`)
 
 ## Scope
 
@@ -168,7 +168,9 @@ The plugin listens for `message.created.teamChat` events and filters:
 
 Replies are sent via `POST /open/v5/groups/{groupId}/messages` with:
 - `plainText` — Message content (auto-chunked for long messages)
-- `options: ["actAsManager"]` — Displayed as a manager message
+- `botName` query parameter — Sets the bot display name
+
+> **Note:** `actAsManager` option is **not available** for Team Chat. Messages are sent as bot type.
 
 ## File Structure
 
