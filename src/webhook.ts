@@ -119,18 +119,21 @@ export async function startChannelTalkWebhook(
 
     // Debug: log raw incoming payload structure
     log.info('webhook received', {
-      keys: Object.keys(body as Record<string, unknown>),
-      event: (body as Record<string, unknown>).event,
-      type: (body as Record<string, unknown>).type,
-      hasEntity: !!(body as Record<string, unknown>).entity,
-      hasRefers: !!(body as Record<string, unknown>).refers,
-      hasBody: !!(body as Record<string, unknown>).body,
+      isArray: Array.isArray(body),
+      keys: Array.isArray(body) ? 'array' : Object.keys(body as Record<string, unknown>),
     });
 
-    // If payload is wrapped (e.g., n8n sends { body: { event, entity, ... } }), unwrap it
-    const unwrapped = ((body as Record<string, unknown>).event
-      ? body
-      : (body as Record<string, unknown>).body ?? (body as Record<string, unknown>).data ?? body) as ChannelTalkWebhookEvent;
+    // Unwrap payload: n8n sends [{ body: { event, entity, ... } }]
+    let raw: Record<string, unknown> = body as Record<string, unknown>;
+    if (Array.isArray(body)) {
+      raw = (body[0] ?? {}) as Record<string, unknown>;
+    }
+    // If the actual event is nested inside a 'body' field (n8n webhook proxy pattern)
+    if (!raw.event && raw.body && typeof raw.body === 'object') {
+      raw = raw.body as Record<string, unknown>;
+    }
+
+    const unwrapped = raw as unknown as ChannelTalkWebhookEvent;
 
     void handleWebhookEvent(unwrapped).catch((err: unknown) => {
       log.error('webhook handler error', { error: String(err) });
