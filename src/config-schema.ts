@@ -1,75 +1,90 @@
 /**
  * Channel Talk Plugin Configuration Schema
- * Defines the structure and validation for Channel Talk plugin configuration
+ * Plain JSON Schema — avoids TypeBox compatibility issues with OpenClaw's config validator.
  */
 
-import { Type } from '@sinclair/typebox';
-import type { Static } from '@sinclair/typebox';
-
-/**
- * Channel Talk configuration schema using TypeBox
- * Defines required and optional configuration fields for the plugin
- */
-export const ChannelTalkConfigSchema = Type.Object(
-  {
+export const ChannelTalkConfigSchema = {
+  type: 'object' as const,
+  additionalProperties: false,
+  properties: {
     /** Enable/disable the Channel Talk plugin */
-    enabled: Type.Optional(Type.Boolean({ default: true })),
-    
+    enabled: {
+      type: 'boolean' as const,
+      default: true,
+      description: 'Enable/disable the Channel Talk plugin',
+    },
+
     /** Channel Talk API access key (required when enabled) */
-    accessKey: Type.String({
+    accessKey: {
+      type: 'string' as const,
       description: 'Channel Talk access key for API authentication',
-    }),
-    
+    },
+
     /** Channel Talk API access secret (required when enabled) */
-    accessSecret: Type.String({
+    accessSecret: {
+      type: 'string' as const,
       description: 'Channel Talk access secret for API authentication',
-    }),
-    
+    },
+
     /** Webhook configuration */
-    webhook: Type.Optional(
-      Type.Object({
-        /** Port for webhook server (default: 3979) */
-        port: Type.Optional(Type.Number({ default: 3979 })),
-        
-        /** Path for webhook endpoint (default: /api/channel-talk) */
-        path: Type.Optional(Type.String({ default: '/api/channel-talk' })),
-      })
-    ),
-    
+    webhook: {
+      type: 'object' as const,
+      properties: {
+        port: {
+          type: 'number' as const,
+          default: 3979,
+          description: 'Port for webhook server (default: 3979)',
+        },
+        path: {
+          type: 'string' as const,
+          default: '/api/channel-talk',
+          description: 'Path for webhook endpoint (default: /api/channel-talk)',
+        },
+      },
+    },
+
     /** Bot display name for sent messages (optional) */
-    botName: Type.Optional(
-      Type.String({
-        description: 'Bot display name for sent messages',
-      })
-    ),
-    
-    /** Group chat policy: 'open' = all groups allowed, 'closed' = none allowed */
-    groupPolicy: Type.Optional(
-      Type.Union([Type.Literal('open'), Type.Literal('closed')], { default: 'open' })
-    ),
+    botName: {
+      type: 'string' as const,
+      description: 'Bot display name for sent messages',
+    },
 
-    /** Allowlist of group IDs (chatIds) to respond to. If set, only these groups get responses. */
-    allowedGroups: Type.Optional(
-      Type.Array(Type.String(), {
-        description: 'List of group chatIds to respond to. If empty or omitted, all groups are allowed (subject to groupPolicy).',
-      })
-    ),
+    /** Group chat policy: "open" = all groups allowed, "closed" = none allowed */
+    groupPolicy: {
+      type: 'string' as const,
+      enum: ['open', 'closed'],
+      default: 'open',
+      description: 'Group chat policy: "open" = all groups allowed, "closed" = none',
+    },
 
-    /** If true, only respond when the bot is mentioned (@botName) in the message. Default: false */
-    mentionOnly: Type.Optional(
-      Type.Boolean({
-        default: false,
-        description: 'Only respond when the bot is mentioned in the message. Similar to Discord mention-only mode.',
-      })
-    ),
+    /** Allowlist of group chatIds to respond to */
+    allowedGroups: {
+      type: 'array' as const,
+      items: { type: 'string' as const },
+      description:
+        'List of group chatIds to respond to. If empty or omitted, all groups are allowed (subject to groupPolicy).',
+    },
+
+    /** Only respond when the bot is mentioned */
+    mentionOnly: {
+      type: 'boolean' as const,
+      default: false,
+      description:
+        'Only respond when the bot is mentioned in the message. Similar to Discord mention-only mode.',
+    },
   },
-  {
-    additionalProperties: false,
-  }
-);
+};
 
 /**
- * TypeScript type derived from the schema
- * Use this for type-safe configuration handling
+ * TypeScript type for the config (manual, not derived from TypeBox)
  */
-export type ChannelTalkConfig = Static<typeof ChannelTalkConfigSchema>;
+export interface ChannelTalkConfig {
+  enabled?: boolean;
+  accessKey: string;
+  accessSecret: string;
+  webhook?: { port?: number; path?: string };
+  botName?: string;
+  groupPolicy?: 'open' | 'closed';
+  allowedGroups?: string[];
+  mentionOnly?: boolean;
+}

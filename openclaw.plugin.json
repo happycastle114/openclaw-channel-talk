@@ -6,6 +6,55 @@
   "configSchema": {
     "type": "object",
     "additionalProperties": false,
-    "properties": {}
+    "properties": {
+      "enabled": {
+        "type": "boolean",
+        "default": true,
+        "description": "Enable/disable the Channel Talk plugin"
+      },
+      "accessKey": {
+        "type": "string",
+        "description": "Channel Talk access key for API authentication"
+      },
+      "accessSecret": {
+        "type": "string",
+        "description": "Channel Talk access secret for API authentication"
+      },
+      "webhook": {
+        "type": "object",
+        "properties": {
+          "port": {
+            "type": "number",
+            "default": 3979,
+            "description": "Port for webhook server"
+          },
+          "path": {
+            "type": "string",
+            "default": "/api/channel-talk",
+            "description": "Path for webhook endpoint"
+          }
+        }
+      },
+      "botName": {
+        "type": "string",
+        "description": "Bot display name for sent messages"
+      },
+      "groupPolicy": {
+        "type": "string",
+        "enum": ["open", "closed"],
+        "default": "open",
+        "description": "Group chat policy"
+      },
+      "allowedGroups": {
+        "type": "array",
+        "items": { "type": "string" },
+        "description": "List of group chatIds to respond to"
+      },
+      "mentionOnly": {
+        "type": "boolean",
+        "default": false,
+        "description": "Only respond when the bot is mentioned"
+      }
+    }
   }
 }
