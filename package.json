@@ -1,5 +1,5 @@
 {
-  "name": "@openclaw-community/channel-talk",
+  "name": "@happycastle/openclaw-channel-talk",
   "version": "0.1.0",
   "description": "OpenClaw Channel Talk (채널톡) Team Chat channel plugin",
   "type": "module",
@@ -48,7 +48,7 @@
       "order": 110
     },
     "install": {
-      "npmSpec": "@openclaw-community/channel-talk",
+      "npmSpec": "@happycastle/openclaw-channel-talk",
       "localPath": "extensions/channel-talk",
       "defaultChoice": false
     }
