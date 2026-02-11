@@ -1,4 +1,4 @@
-# @happycastle/openclaw-channel-talk
+# @happycastle/channel-talk
 
 > ⚠️ **Unofficial** — 이 플러그인은 Channel Corp 또는 OpenClaw 팀과 관련이 없는 커뮤니티 프로젝트입니다.
 
@@ -33,7 +33,7 @@
 **npm을 통한 설치 (권장):**
 
 ```bash
-openclaw plugins install @happycastle/openclaw-channel-talk
+openclaw plugins install @happycastle/channel-talk
 ```
 
 **로컬 설치 (개발용):**
