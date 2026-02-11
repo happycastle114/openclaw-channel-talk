@@ -1,4 +1,4 @@
-# @happycastle/channel-talk
+# @happycastle/openclaw-channel-talk
 
 > ⚠️ **Unofficial** — 이 플러그인은 Channel Corp 또는 OpenClaw 팀과 관련이 없는 커뮤니티 프로젝트입니다.
 
@@ -9,6 +9,8 @@
 - 📨 **Team Chat 메시지 수신** — 웹훅을 통해 채널톡 팀챗 메시지를 실시간으로 수신
 - 💬 **메시지 발송** — OpenClaw 에이전트가 채널톡 팀챗에 직접 응답
 - 🤖 **커스텀 봇 이름** — `botName` 설정으로 봇 표시 이름 변경 가능
+- 🔒 **그룹 허용 목록** — `allowedGroups`로 특정 그룹방에만 응답
+- 📢 **멘션 전용 모드** — `mentionOnly`로 봇이 멘션됐을 때만 응답
 - 🔄 **자동 재시도** — API 오류(429, 5xx) 시 지수 백오프 재시도
 - 📝 **Markdown 청킹** — 긴 메시지를 자동으로 분할하여 전송
 - 🔒 **중복 메시지 필터링** — 동일 메시지 중복 처리 방지
@@ -33,7 +35,7 @@
 **npm을 통한 설치 (권장):**
 
 ```bash
-openclaw plugins install @happycastle/channel-talk
+openclaw plugins install @happycastle/openclaw-channel-talk
 ```
 
 **로컬 설치 (개발용):**
@@ -42,32 +44,39 @@ openclaw plugins install @happycastle/channel-talk
 git clone https://github.com/happycastle114/openclaw-channel-talk.git
 cd openclaw-channel-talk
 npm install
-# OpenClaw 설정에서 로컬 경로를 지정합니다
+# OpenClaw extensions 디렉토리에 복사하거나 심볼릭 링크를 생성합니다
 ```
 
-### 3단계: OpenClaw 설정
+### 3단계: 채널 추가 (CLI)
 
-OpenClaw 설정 파일(`config.yaml` 또는 `config.json`)에 다음을 추가합니다:
+OpenClaw CLI를 사용하여 채널을 추가합니다:
 
-```yaml
-channels:
-  channel-talk:
-    # Channel Talk API 인증 정보 (필수)
-    accessKey: "your-access-key"
-    accessSecret: "your-access-secret"
+```bash
+openclaw channels add \
+  --channel channel-talk \
+  --token "YOUR_ACCESS_KEY" \
+  --bot-token "YOUR_ACCESS_SECRET"
+```
 
-    # 봇 표시 이름 (선택, 기본값: API 기본 봇 이름)
-    botName: "MyBot"
+> 💡 `--token`에 Access Key를, `--bot-token`에 Access Secret을 입력하세요.
 
-    # 팀챗 그룹 정책 (선택, 기본값: "open")
-    # "open" = 모든 팀챗 메시지 처리
-    # "closed" = 팀챗 메시지 처리 안 함
-    groupPolicy: "open"
+이 명령은 자동으로 OpenClaw 설정 파일에 인증 정보를 저장합니다.
 
-    # 웹훅 서버 설정 (선택)
-    webhook:
-      port: 3979              # 기본값: 3979
-      path: "/api/channel-talk"  # 기본값: /api/channel-talk
+### 3단계 (대안): 수동 설정
+
+직접 설정 파일(`openclaw.json`)을 편집할 수도 있습니다:
+
+```json
+{
+  "channels": {
+    "channel-talk": {
+      "accessKey": "your-access-key",
+      "accessSecret": "your-access-secret",
+      "botName": "MyBot",
+      "enabled": true
+    }
+  }
+}
 ```
 
 ### 4단계: 웹훅 엔드포인트 공개
@@ -132,8 +141,31 @@ openclaw gateway start
 | `enabled` | `boolean` | ❌ | `true` | 플러그인 활성화/비활성화 |
 | `botName` | `string` | ❌ | — | 봇 메시지 표시 이름 |
 | `groupPolicy` | `"open" \| "closed"` | ❌ | `"open"` | 팀챗 그룹 메시지 처리 정책 |
+| `allowedGroups` | `string[]` | ❌ | — | 응답할 그룹 chatId 목록. 비어있으면 모든 그룹 허용 |
+| `mentionOnly` | `boolean` | ❌ | `false` | 봇이 멘션됐을 때만 응답 (Discord 멘션 모드와 유사) |
 | `webhook.port` | `number` | ❌ | `3979` | 웹훅 서버 포트 |
 | `webhook.path` | `string` | ❌ | `"/api/channel-talk"` | 웹훅 엔드포인트 경로 |
+
+### 필터링 설정 예시
+
+```json
+{
+  "channels": {
+    "channel-talk": {
+      "accessKey": "...",
+      "accessSecret": "...",
+      "botName": "OpenClaw",
+
+      "allowedGroups": ["452539", "123456"],
+
+      "mentionOnly": true
+    }
+  }
+}
+```
+
+- **`allowedGroups`** — 목록에 있는 그룹방의 메시지만 처리합니다. 비어있거나 생략하면 모든 그룹에 응답합니다.
+- **`mentionOnly`** — `true`로 설정하면 메시지에 봇 이름(`botName`)이 포함된 경우에만 응답합니다. `@BotName` 또는 `BotName아` 같은 패턴을 인식합니다. Discord의 멘션 전용 모드와 유사합니다.
 
 ## 🏗️ Architecture
 
@@ -194,6 +226,21 @@ openclaw gateway start
 
 - 플러그인은 `personType: "bot"` 메시지를 자동으로 무시합니다
 - 이 문제가 발생하면 로그를 확인해 주세요
+
+### plugin id mismatch 경고
+
+이 플러그인의 plugin id는 `openclaw-channel-talk`입니다.
+설정의 `plugins.entries`에서 `openclaw-channel-talk`을 키로 사용해야 합니다:
+
+```json
+{
+  "plugins": {
+    "entries": {
+      "openclaw-channel-talk": { "enabled": true }
+    }
+  }
+}
+```
 
 ## 📄 License
 
